@@ -12,4 +12,3 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     display_name = Column(String)
     avatar = Column(String)
-
