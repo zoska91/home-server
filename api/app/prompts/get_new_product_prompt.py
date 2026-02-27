@@ -12,6 +12,7 @@ def get_new_product_prompt(message: str) -> str:
     - If it is a valid product, return the corrected name and set status to "valid"
     - If it is NOT a valid store product (e.g. random word, sentence, inappropriate content), set status to "invalid"
     - Fix any typos in the product name
+    - Product must be always in Polish language, if user writes in another language, translate it to Polish
 
     Respond ONLY with raw JSON, no markdown, no backticks, no extra text.
     {{"status": "valid" or "invalid" or "cancelled", "name": "corrected product name or null"}}
