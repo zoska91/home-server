@@ -1,5 +1,9 @@
+from app.prompts.base_prompt import base_prompt
+
+
 def get_action_type_prompt(action_list, message):
     return f"""
+    {base_prompt}
     Analyze the user's message and determine the action.
     Available actions:
     {action_list}

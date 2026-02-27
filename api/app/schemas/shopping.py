@@ -1,9 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 # Shopping Products
 class ShoppingProductCreate(BaseModel):
     name: str
+
 
 class ShoppingProductResponse(BaseModel):
     id: int
@@ -12,9 +14,11 @@ class ShoppingProductResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 # Shopping List
 class ShoppingListItemCreate(BaseModel):
     product_id: int
+
 
 class ShoppingListItemResponse(BaseModel):
     id: int

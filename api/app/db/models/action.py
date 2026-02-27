@@ -1,6 +1,7 @@
 from app.db.database import Base
 from sqlalchemy import Column, Integer, String
 
+
 class Action(Base):
     __tablename__ = "actions"
 
