@@ -28,6 +28,8 @@ async def handle_action(
 ) -> str:
     if action == "add_to_shopping_list":
         return await handle_add_to_shopping_list(text, discord_id, db)
+    elif action == "delete_from_shopping_list":
+        return await handle_delete_from_shopping_list(text, db)
     elif action == "clear_shopping_list":
         return await handle_clear_shopping_list(db)
     elif action == "get_shopping_list":

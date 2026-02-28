@@ -12,6 +12,10 @@ async def seed():
                 description="User mentioned a product name or ingredient they need to buy. This action should be selected even if the user didn't explicitly say 'add' or 'buy' - just mentioning a product name like 'bread' or 'milk' is enough to trigger this action.",
             ),
             Action(
+                name="delete_from_shopping_list",
+                description="User wants to delete a specific item from the shopping list",
+            ),
+            Action(
                 name="clear_shopping_list",
                 description="User wants to clear or reset the shopping list",
             ),

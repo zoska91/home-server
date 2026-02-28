@@ -1,11 +1,13 @@
 import json
 import re
+from api.app import db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
 from app.db.models import ShoppingProduct, ShoppingListItem
 from app.prompts.get_product_match_prompt import get_product_match_prompt
 from app.prompts.get_new_product_prompt import get_new_product_prompt
+from app.prompts.get_delete_product_prompt import get_delete_product_prompt
 from app.utils.conversation_state import get_conversation_status
 from app.prompts.get_confirm_product_match_prompt import (
     get_confirm_product_match_prompt,
@@ -25,11 +27,11 @@ model = os.getenv("BASIC_AI_MODEL")
 async def handle_add_to_shopping_list(
     message: str, discord_id: str, db: AsyncSession
 ) -> str:
-    result = await db.execute(select(ShoppingProduct))
-    products = result.scalars().all()
-    product_list = "\n".join([f"- id:{p.id} {p.name}" for p in products])
+    product_list_raw = await db.execute(select(ShoppingProduct))
+    products = product_list_raw.scalars().all()
+    product_list_text = "\n".join([f"- id:{p.id} {p.name}" for p in products])
 
-    prompt = get_product_match_prompt(product_list, message)
+    prompt = get_product_match_prompt(product_list_text, message)
     response = await client.aio.models.generate_content(model=model, contents=prompt)
     print(Fore.GREEN + "AI response:" + str(response.text) + Style.RESET_ALL)
 
@@ -147,6 +149,46 @@ async def handle_get_shopping_list(db: AsyncSession) -> str:
         return "Lista zakupów jest pusta!"
     product_names = [item.product.name for item in items]
     return "Lista zakupów:\n" + "\n".join([f"- {name}" for name in product_names])
+
+
+async def handle_delete_from_shopping_list(text: str, db: AsyncSession) -> str:
+    product_list_raw = await db.execute(select(ShoppingProduct))
+    products = product_list_raw.scalars().all()
+    product_list_text = "\n".join([f"- id:{p.id} {p.name}" for p in products])
+
+    prompt = get_delete_product_prompt(text, product_list_text)
+    response = await client.aio.models.generate_content(model=model, contents=prompt)
+    print(Fore.GREEN + "AI response:" + str(response.text) + Style.RESET_ALL)
+
+    clean = re.sub(r"```(?:json)?\n?", "", response.text).strip()
+    data = json.loads(clean)
+
+    if data["product_id"] is None:
+        return f"Taiki produkt nie istnieje"
+
+    existing = await db.execute(
+        select(ShoppingListItem).where(
+            ShoppingListItem.product_id == data["product_id"]
+        )
+    )
+    product = existing.scalar_one_or_none()
+
+    if product:
+        product = await db.execute(
+            select(ShoppingProduct).where(ShoppingProduct.id == data["product_id"])
+        )
+        product = product.scalar_one_or_none()
+
+        await db.execute(
+            delete(ShoppingListItem).where(
+                ShoppingListItem.product_id == data["product_id"]
+            )
+        )
+        await db.commit()
+        return f"Produkt '{product.name}' został usunięty z listy zakupów!"
+
+    else:
+        return f"Nie ma tego produktu na liscie zakupów!"
 
 
 async def get_ai_reply(text: str) -> str:
