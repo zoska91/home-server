@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
     username: str
     display_name: Optional[str] = None
     avatar: Optional[str] = None
+    is_ai: Optional[bool] = False
 
 
 class UserResponse(BaseModel):
@@ -16,6 +17,7 @@ class UserResponse(BaseModel):
     username: str
     is_admin: bool
     created_at: datetime
+    is_ai: bool
 
     class Config:
         from_attributes = True
