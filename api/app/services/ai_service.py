@@ -6,15 +6,23 @@ from app.utils.conversation_state import get_conversation_status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.models import Action
-from app.prompts.get_action_type_prompt import get_action_type_prompt
+from api.app.prompts.actions_prompt import get_action_type_prompt
+from app.services.common_actions import (
+    handle_get_status_answer,
+    get_ai_reply,
+)
 from app.services.shopping_actions import (
     handle_add_to_shopping_list,
     handle_get_shopping_list,
     handle_clear_shopping_list,
-    get_ai_reply,
     handle_create_new_product,
     handle_awaiting_confirm,
-    handle_get_status_answer,
+    handle_delete_from_shopping_list,
+)
+from app.services.feeder_actions import (
+    handle_feed_cat,
+    handle_turn_on_feeder_light,
+    handle_turn_off_feeder_light,
 )
 from colorama import Fore, Style
 
@@ -36,8 +44,17 @@ async def handle_action(
         return await handle_get_shopping_list(db)
     elif action == "create_new_product":
         return await handle_create_new_product(text, discord_id, db)
+
     elif action == "get_status_answer":
         return await handle_get_status_answer(discord_id)
+
+    elif action == "feed_cat":
+        return await handle_feed_cat(text, discord_id, db)
+    elif action == "turn_on_feeder_light":
+        return await handle_turn_on_feeder_light(text, db)
+    elif action == "turn_off_feeder_light":
+        return await handle_turn_off_feeder_light(db)
+
     else:
         return await get_ai_reply(text)
 

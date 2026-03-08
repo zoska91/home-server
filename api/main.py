@@ -3,6 +3,7 @@ from app.db.database import engine, Base
 from app.routers.users import router as users_router
 from app.routers.shopping import router as shopping_router
 from app.routers.ai import router as ai_router
+from app.routers.feeder import router as feeder_router
 from app.db.seed import seed
 
 app = FastAPI(title="Home API", version="0.1.1")
@@ -18,6 +19,7 @@ async def startup():
 app.include_router(users_router)
 app.include_router(shopping_router)
 app.include_router(ai_router)
+app.include_router(feeder_router)
 
 
 @app.get("/")

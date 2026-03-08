@@ -5,3 +5,5 @@ asyncpg
 python-dotenv
 google-genai
 colorama
+pydantic>=2.0
+sqlalchemy[asyncio]                      

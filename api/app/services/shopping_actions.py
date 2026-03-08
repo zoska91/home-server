@@ -1,15 +1,13 @@
 import json
 import re
-from api.app import db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
 from app.db.models import ShoppingProduct, ShoppingListItem
-from app.prompts.get_product_match_prompt import get_product_match_prompt
-from app.prompts.get_new_product_prompt import get_new_product_prompt
-from app.prompts.get_delete_product_prompt import get_delete_product_prompt
-from app.utils.conversation_state import get_conversation_status
-from app.prompts.get_confirm_product_match_prompt import (
+from app.prompts.shopping_prompt import (
+    get_product_match_prompt,
+    get_new_product_prompt,
+    get_delete_product_prompt,
     get_confirm_product_match_prompt,
 )
 from google import genai
@@ -71,7 +69,7 @@ async def handle_add_to_shopping_list(
 async def handle_create_new_product(
     text: str, discord_id: str, db: AsyncSession
 ) -> str:
-    print(Fore.RED + "sessage" + str(text) + Style.RESET_ALL)
+    print(Fore.RED + "message" + str(text) + Style.RESET_ALL)
 
     prompt = get_new_product_prompt(text)
     response = await client.aio.models.generate_content(model=model, contents=prompt)
@@ -189,13 +187,3 @@ async def handle_delete_from_shopping_list(text: str, db: AsyncSession) -> str:
 
     else:
         return f"Nie ma tego produktu na liscie zakupów!"
-
-
-async def get_ai_reply(text: str) -> str:
-    response = await client.aio.models.generate_content(model=model, contents=text)
-    return response.text.strip()
-
-
-async def handle_get_status_answer(discord_id: str) -> str:
-    state = get_conversation_status(discord_id)
-    return state["state"] if state else "no_state"
