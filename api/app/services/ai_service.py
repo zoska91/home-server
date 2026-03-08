@@ -6,7 +6,7 @@ from app.utils.conversation_state import get_conversation_status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.models import Action
-from api.app.prompts.actions_prompt import get_action_type_prompt
+from app.prompts.actions_prompt import get_action_type_prompt
 from app.services.common_actions import (
     handle_get_status_answer,
     get_ai_reply,

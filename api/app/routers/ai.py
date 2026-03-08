@@ -1,6 +1,5 @@
-import select
-
-from api.app.db.models.users import User
+from sqlalchemy import select
+from app.db.models.users import User
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession

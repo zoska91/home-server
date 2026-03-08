@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+from sqlalchemy.orm import joinedload
 from app.db.database import get_db
 from app.db.models.shopping import ShoppingProduct, ShoppingListItem
 from app.schemas.shopping import (
@@ -40,7 +41,9 @@ async def create_product(
 # shopping list
 @router.get("/list", response_model=list[ShoppingListItemResponse])
 async def get_shopping_list(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ShoppingListItem))
+    result = await db.execute(
+        select(ShoppingListItem).options(joinedload(ShoppingListItem.product))
+    )
     return result.scalars().all()
 
 
@@ -55,7 +58,7 @@ async def add_to_list(item: ShoppingListItemCreate, db: AsyncSession = Depends(g
     db_item = ShoppingListItem(product_id=item.product_id)
     db.add(db_item)
     await db.commit()
-    await db.refresh(db_item)
+    await db.refresh(db_item, attribute_names=["product"])
     return db_item
 
 

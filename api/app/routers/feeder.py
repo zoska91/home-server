@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.services.feeder_actions import handle_feed_cat_default
-from app.services.feeder_client import get_stream_url
+from app.clients.feeder import get_stream_url
 
 router = APIRouter(prefix="/feeder", tags=["feeder"])
 

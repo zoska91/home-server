@@ -41,7 +41,7 @@ async def handle_add_to_shopping_list(
         set_conversation_status(
             discord_id, {"state": "awaiting_confirm", "product_id": data["product_id"]}
         )
-        return f"Nie jestem pewna, czy '{message}' to '{products[data['product_id']-1].name}'. Czy chcesz dodać ten produkt do listy zakupów? (tak/nie)"
+        return f"Nie jestem pewna, czy '{message}' to wskazany produkt. Czy chcesz dodać ten produkt do listy zakupów? (tak/nie)"
 
     if data["status"] == "not_found":
         set_conversation_status(discord_id, {"state": "awaiting_new_product"})
