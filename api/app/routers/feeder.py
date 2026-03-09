@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db
 from app.services.feeder_actions import handle_feed_cat_default
 from app.clients.feeder import get_stream_url
+from app.schemas.feeder import FeederEvent
+from app.utils.feeder_messages import EVENT_MESSAGES
 
 router = APIRouter(prefix="/feeder", tags=["feeder"])
 
@@ -58,3 +60,12 @@ async def feed_default(db: AsyncSession = Depends(get_db)):
     """
     result = await handle_feed_cat_default(db)
     return {"status": "ok", "message": result}
+
+
+async def feeder_event(event: FeederEvent):
+    message = EVENT_MESSAGES.get(event.type, f"ℹ️ Karmnik: {event.type}")
+    try:
+        await send_discord_message(content=message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Discord push failed: {e}")
+    return {"status": "ok"}
