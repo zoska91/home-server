@@ -17,22 +17,15 @@ async def _feeder_post(endpoint: str, payload: dict) -> dict:
 
 
 async def send_feed_command(duration_ms: int) -> dict:
-    """Trigger motor for given duration in milliseconds."""
-    return await _feeder_post(
-        "/command", {"action": "feed", "duration_ms": duration_ms}
-    )
+    return await _feeder_post("/feed", {"duration_ms": duration_ms})
 
 
 async def send_light_on_command(duration_sec: int) -> dict:
-    """Turn on LED for given duration in seconds. 0 = indefinite (until off command)."""
-    return await _feeder_post(
-        "/command", {"action": "light_on", "duration_sec": duration_sec}
-    )
+    return await _feeder_post("/light/on", {"duration_sec": duration_sec})
 
 
 async def send_light_off_command() -> dict:
-    """Turn off LED immediately."""
-    return await _feeder_post("/command", {"action": "light_off"})
+    return await _feeder_post("/light/off", {})
 
 
 def get_stream_url() -> str:

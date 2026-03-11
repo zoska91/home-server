@@ -2,7 +2,10 @@ import json
 import os
 import re
 from google import genai
-from app.utils.conversation_state import get_conversation_status
+from app.utils.conversation_state import (
+    clear_conversation_status,
+    get_conversation_status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.models import Action
@@ -29,6 +32,19 @@ from colorama import Fore, Style
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 model = os.getenv("BASIC_AI_MODEL")
+
+
+def _is_confirmation_only(message: str) -> bool:
+    normalized = re.sub(r"[^\wąćęłńóśźż]", " ", message.lower(), flags=re.IGNORECASE)
+    tokens = [t for t in normalized.split() if t]
+    if not tokens:
+        return False
+
+    affirmative = {"tak", "taa", "ta", "ok", "okej", "dobra", "zgoda", "jasne"}
+    negative = {"nie", "niee", "cancel", "anuluj", "rezygnuje", "rezygnuję"}
+    allowed = affirmative | negative
+
+    return all(token in allowed for token in tokens)
 
 
 async def handle_action(
@@ -65,9 +81,15 @@ async def get_status_answer(message: str, discord_id: str, db: AsyncSession) -> 
 
     if state:
         if state["state"] == "awaiting_confirm":
-            reply = await handle_awaiting_confirm(
-                message, discord_id, state["product_id"], db
-            )
+            # If user adds extra words (e.g. "tak, dodaj indyka"), treat it as
+            # a fresh product request instead of confirming stale product_id.
+            if _is_confirmation_only(message):
+                reply = await handle_awaiting_confirm(
+                    message, discord_id, state["product_id"], db
+                )
+            else:
+                clear_conversation_status(discord_id)
+                reply = await handle_add_to_shopping_list(message, discord_id, db)
         elif state["state"] == "awaiting_new_product":
             reply = await handle_create_new_product(message, discord_id, db)
 

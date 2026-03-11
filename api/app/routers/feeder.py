@@ -62,6 +62,7 @@ async def feed_default(db: AsyncSession = Depends(get_db)):
     return {"status": "ok", "message": result}
 
 
+@router.post("/event")
 async def feeder_event(event: FeederEvent):
     message = EVENT_MESSAGES.get(event.type, f"ℹ️ Karmnik: {event.type}")
     try:
