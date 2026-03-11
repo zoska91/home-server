@@ -1,0 +1,7 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "include": ["api", "discord_bot"],
+  "exclude": ["**/__pycache__", "venv"],
+  "typeCheckingMode": "basic"
+}

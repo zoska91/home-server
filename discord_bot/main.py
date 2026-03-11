@@ -9,6 +9,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
+token = os.getenv("DISCORD_TOKEN")
+if not token:
+    raise RuntimeError("DISCORD_TOKEN is not set")
 
 
 @client.event
@@ -28,4 +31,4 @@ async def on_message(message):
     await message.reply(f"{result}")
 
 
-client.run(os.getenv("DISCORD_TOKEN"))
+client.run(token)

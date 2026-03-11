@@ -36,9 +36,6 @@ def get_delete_product_prompt(products_list, message):
     """
 
 
-from app.prompts.base_prompt import base_prompt
-
-
 def get_new_product_prompt(message: str) -> str:
     return f"""
     {base_prompt}

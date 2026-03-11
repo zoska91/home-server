@@ -25,10 +25,11 @@ from app.services.feeder_actions import (
     handle_turn_off_feeder_light,
 )
 from colorama import Fore, Style
+from typing import Optional
 
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-model = os.getenv("BASIC_AI_MODEL")
+model = os.getenv("BASIC_AI_MODEL") or "gemini-2.0-flash"
 
 
 async def handle_action(
@@ -59,7 +60,9 @@ async def handle_action(
         return await get_ai_reply(text)
 
 
-async def get_status_answer(message: str, discord_id: str, db: AsyncSession) -> dict:
+async def get_status_answer(
+    message: str, discord_id: str, db: AsyncSession
+) -> Optional[str]:
     state = get_conversation_status(discord_id)
     reply = None
 
@@ -76,7 +79,9 @@ async def get_status_answer(message: str, discord_id: str, db: AsyncSession) -> 
     return reply
 
 
-async def get_action_type(message: str, discord_id: str, db: AsyncSession) -> dict:
+async def get_action_type(
+    message: str, discord_id: str, db: AsyncSession
+) -> dict[str, str]:
     status_answer = await get_status_answer(message, discord_id, db)
 
     if status_answer:
@@ -90,7 +95,7 @@ async def get_action_type(message: str, discord_id: str, db: AsyncSession) -> di
         model=model, contents=get_action_type_prompt(action_list, message)
     )
 
-    text = re.sub(r"```(?:json)?\n?", "", aiResponse.text).strip()
+    text = re.sub(r"```(?:json)?\n?", "", (aiResponse.text or "")).strip()
 
     if not text:
         return {

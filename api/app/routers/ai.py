@@ -24,7 +24,7 @@ async def handle_message(request: MessageRequest, db: AsyncSession = Depends(get
     result = await db.execute(select(User).where(User.discord_id == request.discord_id))
     user = result.scalar_one_or_none()
 
-    if not user or not user.is_ai:
+    if not user or getattr(user, "is_ai", False) is not True:
         return {"reply": "Nie masz dostępu do AI."}
 
     result = await get_action_type(request.text, request.discord_id, db)
