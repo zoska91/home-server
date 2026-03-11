@@ -7,11 +7,14 @@ def get_confirm_product_match_prompt(message: str) -> str:
     The user is responding to a confirmation question.
     
     Rules:
-    - If the user confirms (e.g. "yes", "ok", "sure", "tak", "dobra", "zgadza się"), return confirmed: true
-    - If the user declines (e.g. "no", "nope", "nie", "nie to", "rezygnuję"), return confirmed: false
+    - Return decision = "confirm" only when the user clearly confirms adding the previously suggested product.
+    - Return decision = "decline" when the user clearly rejects/cancels adding the previously suggested product.
+    - Return decision = "new_product" when user provides a different product (even with words like "tak"), e.g. "tak, dodaj indyka".
+    - You MUST always choose one decision: "confirm", "decline" or "new_product".
+    - If decision is "new_product", set product_text to the user's intended product phrase (corrected, concise, Polish). Otherwise product_text = null.
 
     Respond ONLY with raw JSON, no markdown, no backticks, no extra text.
-    {{"confirmed": True or False}}
+    {{"decision": "confirm" or "decline" or "new_product", "product_text": "string or null"}}
 
     Message: {message}
     """

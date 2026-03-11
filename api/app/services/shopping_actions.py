@@ -15,6 +15,7 @@ import os
 from colorama import Fore, Style
 from app.utils.conversation_state import (
     clear_conversation_status,
+    get_conversation_status,
     set_conversation_status,
 )
 
@@ -44,7 +45,7 @@ async def handle_add_to_shopping_list(
         return f"Nie jestem pewna, czy '{message}' to wskazany produkt. Czy chcesz dodać ten produkt do listy zakupów? (tak/nie)"
 
     if data["status"] == "not_found":
-        set_conversation_status(discord_id, {"state": "awaiting_new_product"})
+        set_conversation_status(discord_id, {"state": "awaiting_new_product", "attempts": 0})
         return f"Nie znałam tego produktu. Jeśli chcesz dodać nowy produkt do bazy podaj jego nazwę, która zostanie wpisana do bazy danych."
 
     if data["status"] == "found":
@@ -84,7 +85,17 @@ async def handle_create_new_product(
         return f"Ok, nie to nie xd"
 
     if data["status"] == "invalid":
-        return f"To nie jest produkt, który można kupić w sklepie. Jeśli chcesz dodać produkt do bazy, podaj jego nazwę, która zostanie wpisana do bazy danych albo powiedz, że chcesz zakończyc tworzenie nowego produktu."
+        state = get_conversation_status(discord_id) or {}
+        attempts = int(state.get("attempts", 0)) + 1
+
+        if attempts >= 3:
+            clear_conversation_status(discord_id)
+            return "Nowy produkt nie został dodany do listy."
+
+        set_conversation_status(
+            discord_id, {"state": "awaiting_new_product", "attempts": attempts}
+        )
+        return "To nie jest produkt, który można kupić w sklepie. Podaj samą nazwę produktu."
 
     if data["status"] == "valid":
         new_product = ShoppingProduct(name=data["name"])
@@ -108,8 +119,9 @@ async def handle_awaiting_confirm(
 
     clean = re.sub(r"```(?:json)?\n?", "", response.text).strip()
     data = json.loads(clean)
+    decision = data.get("decision")
 
-    if data["confirmed"] == True:
+    if decision == "confirm":
         existing = await db.execute(
             select(ShoppingListItem).where(ShoppingListItem.product_id == product_id)
         )
@@ -127,9 +139,13 @@ async def handle_awaiting_confirm(
         product = product.scalar_one_or_none()
         return f"Dodano '{product.name}' do listy zakupów!"
 
-    else:
+    if decision == "new_product":
         clear_conversation_status(discord_id)
-        return f"Ok, nie dodałam tego produktu. Jeśli chcesz dodać inny produkt, napisz jego nazwę."
+        new_message = (data.get("product_text") or message).strip()
+        return await handle_add_to_shopping_list(new_message, discord_id, db)
+
+    clear_conversation_status(discord_id)
+    return f"Ok, nie dodałam tego produktu. Jeśli chcesz dodać inny produkt, napisz jego nazwę."
 
 
 async def handle_clear_shopping_list(db: AsyncSession) -> str:
