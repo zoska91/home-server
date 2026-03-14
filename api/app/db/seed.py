@@ -54,9 +54,9 @@ async def seed():
                 print(f"Added action: {action.name}")
 
         motor_configs = [
-            FeederMotorConfig(name="sm", duration_ms=800, is_default=False),
-            FeederMotorConfig(name="md", duration_ms=1500, is_default=True),
-            FeederMotorConfig(name="lg", duration_ms=2500, is_default=False),
+            FeederMotorConfig(name="sm", duration_ms=2000, is_default=False),
+            FeederMotorConfig(name="md", duration_ms=4500, is_default=True),
+            FeederMotorConfig(name="lg", duration_ms=9000, is_default=False),
         ]
 
         for cfg in motor_configs:
