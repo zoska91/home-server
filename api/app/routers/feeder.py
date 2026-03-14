@@ -7,8 +7,11 @@ from app.services.feeder_actions import handle_feed_cat_default
 from app.clients.feeder import get_stream_url
 from app.schemas.feeder import FeederEvent
 from app.utils.feeder_messages import EVENT_MESSAGES
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/feeder", tags=["feeder"])
+
+_last_api_error: datetime | None = None
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_ALERT_CHANNEL_ID = int(os.getenv("DISCORD_ALERT_CHANNEL_ID", "0"))
@@ -64,6 +67,14 @@ async def feed_default(db: AsyncSession = Depends(get_db)):
 
 @router.post("/event")
 async def feeder_event(event: FeederEvent):
+    global _last_api_error
+
+    if event.type == "api_error":
+        now = datetime.now()
+        if _last_api_error and now - _last_api_error < timedelta(minutes=10):
+            return {"status": "ok"}
+        _last_api_error = now
+
     message = EVENT_MESSAGES.get(event.type, f"ℹ️ Karmnik: {event.type}")
     try:
         await send_discord_message(content=message)
