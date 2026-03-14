@@ -71,7 +71,7 @@ async def feeder_event(event: FeederEvent):
 
     if event.type == "api_error":
         now = datetime.now()
-        if _last_api_error and now - _last_api_error < timedelta(minutes=10):
+        if _last_api_error and now - _last_api_error < timedelta(minutes=60 * 24):
             return {"status": "ok"}
         _last_api_error = now
 
