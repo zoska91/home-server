@@ -10,8 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clients.feeder import (
     send_feed_command,
+    send_feed_stop_command,
     send_light_off_command,
     send_light_on_command,
+    send_reset_command,
+    get_snapshot_url,
 )
 from app.db.models import FeederLightConfig, FeederMotorConfig
 from app.prompts.feeder_prompt import get_feed_cat_prompt, get_turn_on_light_prompt
@@ -65,7 +68,7 @@ async def handle_feed_cat_default(db: AsyncSession) -> str:
 
     try:
         await send_feed_command(duration_ms=duration_ms)
-        return f"Nakarmiono kotkę! Porcja domyślna: {config_label} ({duration_ms}ms)"
+        return f"Demon nakarmiony! Porcja: {config_label} ({duration_ms}ms)"
     except Exception as e:
         print(Fore.RED + f"[handle_feed_cat_default] {e}" + Style.RESET_ALL)
         return ESP32_ERROR_MSG
@@ -107,3 +110,25 @@ async def handle_turn_off_feeder_light(db: AsyncSession) -> str:
     except Exception as e:
         print(Fore.RED + f"[handle_turn_off_feeder_light] {e}" + Style.RESET_ALL)
         return ESP32_ERROR_MSG
+
+
+async def handle_stop_feed() -> str:
+    try:
+        await send_feed_stop_command()
+        return "Zatrzymano silnik karmika"
+    except Exception as e:
+        print(Fore.RED + f"[handle_stop_feed] {e}" + Style.RESET_ALL)
+        return ESP32_ERROR_MSG
+
+
+async def handle_reset_feeder() -> str:
+    try:
+        await send_reset_command()
+        return "Karmik zostanie zrestartowany"
+    except Exception as e:
+        print(Fore.RED + f"[handle_reset_feeder] {e}" + Style.RESET_ALL)
+        return ESP32_ERROR_MSG
+
+
+async def handle_take_snapshot() -> str:
+    return get_snapshot_url()

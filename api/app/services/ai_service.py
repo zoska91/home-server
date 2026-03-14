@@ -23,6 +23,9 @@ from app.services.feeder_actions import (
     handle_feed_cat,
     handle_turn_on_feeder_light,
     handle_turn_off_feeder_light,
+    handle_stop_feed,
+    handle_reset_feeder,
+    handle_take_snapshot,
 )
 from colorama import Fore, Style
 from typing import Optional
@@ -55,6 +58,12 @@ async def handle_action(
         return await handle_turn_on_feeder_light(text, db)
     elif action == "turn_off_feeder_light":
         return await handle_turn_off_feeder_light(db)
+    elif action == "stop_feed":
+        return await handle_stop_feed()
+    elif action == "reset_feeder":
+        return await handle_reset_feeder()
+    elif action == "take_snapshot":
+        return await handle_take_snapshot()
 
     else:
         return await get_ai_reply(text)

@@ -28,5 +28,17 @@ async def send_light_off_command() -> dict:
     return await _feeder_post("/light/off", {})
 
 
+async def send_feed_stop_command() -> dict:
+    return await _feeder_post("/feed/stop", {})
+
+
+async def send_reset_command() -> dict:
+    return await _feeder_post("/reset", {})
+
+
 def get_stream_url() -> str:
     return FEEDER_STREAM_URL
+
+
+def get_snapshot_url() -> str:
+    return f"{FEEDER_BASE_URL}/snapshot"

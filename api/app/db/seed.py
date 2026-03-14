@@ -42,6 +42,18 @@ async def seed():
                 name="turn_off_feeder_light",
                 description="User wants to turn off the LED on the feeder. Examples: 'zgaś światło kota', 'wyłącz lampkę'.",
             ),
+            Action(
+                name="stop_feed",
+                description="User wants to stop the feeder motor that is currently running. Examples: 'zatrzymaj karmik', 'stop', 'wyłącz silnik'.",
+            ),
+            Action(
+                name="reset_feeder",
+                description="User wants to restart or reset the feeder device. Examples: 'zresetuj karmik', 'restart karmika', 'uruchom ponownie'.",
+            ),
+            Action(
+                name="take_snapshot",
+                description="User wants to see a photo from the feeder camera. Examples: 'pokaż zdjęcie', 'zrób fotkę', 'jak wygląda', 'co robi kot'.",
+            ),
         ]
 
         for action in actions:
@@ -54,9 +66,9 @@ async def seed():
                 print(f"Added action: {action.name}")
 
         motor_configs = [
-            FeederMotorConfig(name="sm", duration_ms=2000, is_default=False),
-            FeederMotorConfig(name="md", duration_ms=4500, is_default=True),
-            FeederMotorConfig(name="lg", duration_ms=9000, is_default=False),
+            FeederMotorConfig(name="sm", duration_ms=8000, is_default=False),
+            FeederMotorConfig(name="md", duration_ms=9000, is_default=True),
+            FeederMotorConfig(name="lg", duration_ms=12000, is_default=False),
         ]
 
         for cfg in motor_configs:
