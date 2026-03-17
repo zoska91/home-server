@@ -84,7 +84,9 @@ async def feeder_event(event: FeederEvent):
 
 
 @router.get("/nfc")
-async def feed_nfc(db: AsyncSession = Depends(get_db)):
+async def feed_nfc(token: str, db: AsyncSession = Depends(get_db)):
     """GET endpoint for NFC tag — triggers default feeding."""
+    if token != os.getenv("FEEDER_PASS_NFC"):
+        raise HTTPException(status_code=403, detail="Forbidden")
     await handle_feed_cat_default(db)
     return {"status": "ok"}
