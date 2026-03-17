@@ -81,3 +81,10 @@ async def feeder_event(event: FeederEvent):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Discord push failed: {e}")
     return {"status": "ok"}
+
+
+@router.get("/nfc")
+async def feed_nfc(db: AsyncSession = Depends(get_db)):
+    """GET endpoint for NFC tag — triggers default feeding."""
+    await handle_feed_cat_default(db)
+    return {"status": "ok"}
