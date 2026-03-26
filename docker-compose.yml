@@ -10,6 +10,7 @@ services:
       - /app/node_modules
     env_file:
       - .env
+    restart: unless-stopped
 
   discord_bot:
     build: ./discord_bot
@@ -21,6 +22,7 @@ services:
       - ./discord_bot:/discord_bot
     environment:
       - PYTHONUNBUFFERED=1
+    restart: unless-stopped
   db:
     image: postgres:16
     environment:
@@ -31,6 +33,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4
@@ -41,6 +44,7 @@ services:
       - "5050:80"
     depends_on:
       - db
+    restart: unless-stopped
 
 volumes:
   postgres_data:
