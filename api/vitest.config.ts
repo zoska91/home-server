@@ -1,13 +1,19 @@
-import { defineConfig } from "vitest/config.js";
+import swc from "unplugin-swc";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    coverage: {
-      provider: "v8",
-      include: ["src/**/*.ts"],
-      exclude: ["src/index.ts", "src/db/seed.ts"],
-    },
+    include: ["src/**/*.spec.ts"],
   },
+  plugins: [
+    swc.vite({
+      module: { type: "nodenext" },
+      jsc: {
+        parser: { syntax: "typescript", decorators: true },
+        transform: { decoratorMetadata: true },
+      },
+    }),
+  ],
 });
