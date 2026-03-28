@@ -93,6 +93,7 @@ export interface WeatherRenderData {
   feelsLike: number;
   humidity: number;
   pressure: number;
+  tempMeteo: number;
   tempIndoor?: number;
 }
 
@@ -172,7 +173,7 @@ export function renderWeather(data: WeatherRenderData): Buffer {
   const cols = [
     {
       label: "TEMP.",
-      value: `${data.tempOutdoor < 0 ? "−" : ""}${Math.abs(data.tempOutdoor).toFixed(1)}°`,
+      value: `${data.tempMeteo < 0 ? "−" : ""}${Math.abs(data.tempMeteo).toFixed(1)}°`,
       x: 100,
     },
     {
@@ -217,7 +218,6 @@ export function renderWeather(data: WeatherRenderData): Buffer {
 export interface ShoppingItem {
   id: number;
   name: string;
-  checked: boolean;
 }
 
 export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
@@ -248,8 +248,6 @@ export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
     ctx.lineTo(W, y + itemH);
     ctx.stroke();
 
-    ctx.font = item.checked ? `18px ${FONT}` : `bold 18px ${FONT}`;
-    ctx.fillStyle = item.checked ? "#aaaaaa" : "#000000";
     ctx.fillText(item.name, 56, y + itemH / 2 + 7);
   });
 
