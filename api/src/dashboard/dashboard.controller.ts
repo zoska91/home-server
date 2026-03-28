@@ -1,6 +1,7 @@
 import { Controller, Get, Header, Query, Res } from "@nestjs/common";
 import { DashboardService } from "./dashboard.service";
 import { Response } from "express";
+import { TDashboardView } from "./dashboard.types";
 
 @Controller("dashboard")
 export class DashboardController {
@@ -9,7 +10,7 @@ export class DashboardController {
   @Get("display")
   @Header("Content-Type", "image/png")
   async getDisplay(
-    @Query("view") view: string = "weather",
+    @Query("view") view: TDashboardView = "weather",
     @Query("page") page: string = "0",
     @Res() res: Response,
   ) {
