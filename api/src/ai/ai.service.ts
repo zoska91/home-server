@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { GoogleGenAI } from "@google/genai";
 import { PrismaService } from "../prisma/prisma.service";
 import { FeederService } from "../feeder/feeder.service";
 import { ConversationService } from "../conversation/conversation.service";
