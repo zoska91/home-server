@@ -16,6 +16,12 @@ export class DashboardController {
   ) {
     const png = await this.dashboardService.getDisplay(view, parseInt(page));
     res.setHeader("Content-Type", "image/png");
+
+    if (view === "shopping") {
+      const pageCount = await this.dashboardService.getPageCount();
+      res.setHeader("X-Page-Count", String(pageCount));
+    }
+
     res.send(png);
   }
 }

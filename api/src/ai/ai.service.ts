@@ -13,10 +13,11 @@ import {
 } from "../prompts/shopping.prompt";
 import { basePrompt } from "../prompts/base.prompt";
 import { MESSAGES } from "../utils/messages";
+import { Ollama } from "ollama";
 
 @Injectable()
 export class AiService {
-  private readonly ai: GoogleGenAI;
+  private readonly ollama: Ollama;
   private readonly model: string;
 
   constructor(
@@ -25,8 +26,10 @@ export class AiService {
     private readonly conversationService: ConversationService,
     private readonly config: ConfigService,
   ) {
-    this.ai = new GoogleGenAI({ apiKey: config.get("GEMINI_API_KEY") });
-    this.model = config.get("BASIC_AI_MODEL") ?? "gemini-2.0-flash";
+    this.ollama = new Ollama({
+      host: config.get("OLLAMA_HOST") ?? "http://host.docker.internal:11434",
+    });
+    this.model = config.get("BASIC_AI_MODEL") ?? "llama3.2:3b";
   }
 
   private parseJson(text: string) {
@@ -34,11 +37,12 @@ export class AiService {
   }
 
   private async generate(contents: string): Promise<string> {
-    const response = await this.ai.models.generateContent({
+    const response = await this.ollama.generate({
       model: this.model,
-      contents,
+      prompt: contents,
+      stream: false,
     });
-    return (response.text ?? "").trim();
+    return response.response.trim();
   }
 
   async getActionType(

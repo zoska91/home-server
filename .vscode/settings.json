@@ -1,5 +1,5 @@
 {
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.typeCheckingMode": "basic",
-  "cSpell.words": ["Meteo"]
+  "cSpell.words": ["Meteo", "ollama"]
 }

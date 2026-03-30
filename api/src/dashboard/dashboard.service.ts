@@ -49,4 +49,9 @@ export class DashboardService {
       name: item.product.name,
     }));
   }
+
+  async getPageCount() {
+    const count = await this.prisma.shoppingListItem.count();
+    return Math.ceil(count / 10);
+  }
 }
