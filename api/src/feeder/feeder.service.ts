@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { GoogleGenAI } from "@google/genai";
+import { Ollama } from "ollama";
 import axios from "axios";
 import FormData from "form-data";
 import { PrismaService } from "../prisma/prisma.service";
@@ -14,7 +14,7 @@ import { EVENT_MESSAGES } from "../utils/feederMessages";
 
 @Injectable()
 export class FeederService {
-  private readonly ai: GoogleGenAI;
+  private readonly ollama: Ollama;
   private readonly model: string;
   private lastApiError: Date | null = null;
 
@@ -23,12 +23,23 @@ export class FeederService {
     private readonly feederClient: FeederClient,
     private readonly config: ConfigService,
   ) {
-    this.ai = new GoogleGenAI({ apiKey: config.get("GEMINI_API_KEY") });
-    this.model = config.get("BASIC_AI_MODEL") ?? "gemini-2.0-flash";
+    this.ollama = new Ollama({
+      host: config.get("OLLAMA_HOST") ?? "http://host.docker.internal:11434",
+    });
+    this.model = config.get("BASIC_AI_MODEL") ?? "llama3.2:3b";
   }
 
   private parseJson(text: string) {
     return JSON.parse(text.replace(/```(?:json)?\n?/g, "").trim());
+  }
+
+  private async generate(prompt: string): Promise<string> {
+    const response = await this.ollama.generate({
+      model: this.model,
+      prompt,
+      stream: false,
+    });
+    return response.response.trim();
   }
 
   async handleFeedCat(text: string): Promise<string> {
@@ -38,11 +49,8 @@ export class FeederService {
     const optionsList = configs
       .map((c) => `${c.name} - ${c.durationMs}ms`)
       .join("\n");
-    const response = await this.ai.models.generateContent({
-      model: this.model,
-      contents: getFeedCatPrompt(text, optionsList),
-    });
-    const data = this.parseJson(response.text ?? "{}");
+    const raw = await this.generate(getFeedCatPrompt(text, optionsList));
+    const data = this.parseJson(raw);
 
     const matched =
       configs.find((c) => c.name === data.config_name) ??
@@ -76,11 +84,8 @@ export class FeederService {
     const optionsList = configs
       .map((c) => `${c.name} - ${c.durationSec}s`)
       .join("\n");
-    const response = await this.ai.models.generateContent({
-      model: this.model,
-      contents: getTurnOnLightPrompt(text, optionsList),
-    });
-    const data = this.parseJson(response.text ?? "{}");
+    const raw = await this.generate(getTurnOnLightPrompt(text, optionsList));
+    const data = this.parseJson(raw);
 
     const matched =
       configs.find((c) => c.name === data.config_name) ??
