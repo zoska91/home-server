@@ -154,7 +154,26 @@ export class FeederService {
     }
   }
 
+  async getSettings() {
+    return this.prisma.feederSettings.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1 },
+    });
+  }
+
+  async setMotionNotifications(enabled: boolean) {
+    return this.prisma.feederSettings.upsert({
+      where: { id: 1 },
+      update: { motionNotificationsEnabled: enabled },
+      create: { id: 1, motionNotificationsEnabled: enabled },
+    });
+  }
+
   async handleMotion(imageBuffer: Buffer): Promise<void> {
+    const settings = await this.getSettings();
+    if (!settings.motionNotificationsEnabled) return;
+
     const streamUrl = this.feederClient.getStreamUrl();
     const message = `🐱 Wykryto ruch przy karmiku!\n📹 Podgląd na żywo: ${streamUrl}`;
     await this.sendDiscordMessage(message, imageBuffer);

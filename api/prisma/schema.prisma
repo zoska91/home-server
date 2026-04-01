@@ -62,3 +62,10 @@ model FeederLightConfig {
 
   @@map("feeder_light_configs")
 }
+
+model FeederSettings {
+  id                         Int     @id @default(autoincrement())
+  motionNotificationsEnabled Boolean @default(true) @map("motion_notifications_enabled")
+
+  @@map("feeder_settings")
+}

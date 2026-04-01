@@ -120,6 +120,12 @@ export class AiService {
         return this.feederService.handleResetFeeder();
       case "take_snapshot":
         return this.feederService.handleTakeSnapshot();
+      case "enable_motion_notifications":
+        await this.feederService.setMotionNotifications(true);
+        return MESSAGES.MOTION_NOTIFICATIONS_ENABLED;
+      case "disable_motion_notifications":
+        await this.feederService.setMotionNotifications(false);
+        return MESSAGES.MOTION_NOTIFICATIONS_DISABLED;
       default:
         return this.generate(`${basePrompt}\n${text}`);
     }

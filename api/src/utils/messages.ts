@@ -15,6 +15,10 @@ export const MESSAGES = {
   FEED_STOPPED: "Zatrzymano silnik karmika",
   FEEDER_RESET: "Karmik zostanie zrestartowany",
 
+  // Feeder notifications
+  MOTION_NOTIFICATIONS_ENABLED: "Powiadomienia o ruchu przy karmiku włączone.",
+  MOTION_NOTIFICATIONS_DISABLED: "Powiadomienia o ruchu przy karmiku wyłączone.",
+
   // Feeder light
   NO_LIGHT_CONFIGS: "Brak skonfigurowanych trybów świateł w bazie danych!",
   LIGHT_ON: (sec: number) => `Włączono światło na ${sec}s`,

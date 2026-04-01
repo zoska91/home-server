@@ -15,6 +15,8 @@ const actions = [
   { name: "stop_feed", description: "User wants to stop the feeder motor. Examples: 'zatrzymaj karmik', 'stop', 'wyłącz silnik'." },
   { name: "reset_feeder", description: "User wants to restart the feeder device. Examples: 'zresetuj karmik', 'restart karmika'." },
   { name: "take_snapshot", description: "User wants to see a photo from the feeder camera. Examples: 'pokaż zdjęcie', 'zrób fotkę', 'co robi kot'." },
+  { name: "enable_motion_notifications", description: "User wants to enable motion notifications from the feeder. Examples: 'włącz powiadomienia', 'wysyłaj alerty z karmika', 'chcę dostawać powiadomienia o ruchu'." },
+  { name: "disable_motion_notifications", description: "User wants to disable motion notifications from the feeder. Examples: 'wyłącz powiadomienia', 'nie wysyłaj alertów z karmika', 'przestań mnie spamować z karmika'." },
 ];
 
 const motorConfigs = [

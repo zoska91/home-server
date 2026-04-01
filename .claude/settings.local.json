@@ -5,7 +5,8 @@
       "WebFetch(domain:betterstack.com)",
       "WebFetch(domain:vitest.dev)",
       "Bash(npm install:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(node -e \"const {PrismaClient} = require\\(''@prisma/client''\\); const p = new PrismaClient\\(\\); console.log\\(''feederSettings'' in p\\);\")"
     ]
   }
 }

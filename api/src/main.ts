@@ -1,9 +1,17 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
+import { execSync } from "child_process";
 import { AppModule } from "./app.module";
+import { seed } from "./db/seed";
 
 async function bootstrap() {
+  console.log("[startup] Running migrations...");
+  execSync("npx prisma migrate deploy", { stdio: "inherit" });
+
+  console.log("[startup] Running seed...");
+  await seed();
+
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.listen(process.env["PORT"] ?? 8000);

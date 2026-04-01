@@ -1,12 +1,17 @@
-import { Controller, Post, Get, Body, Query, UploadedFile, UseInterceptors, ForbiddenException, BadRequestException } from "@nestjs/common";
+import { Controller, Post, Get, Patch, Body, Query, UploadedFile, UseInterceptors, ForbiddenException, BadRequestException } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
-import { IsString } from "class-validator";
+import { IsString, IsBoolean } from "class-validator";
 import { FeederService } from "./feeder.service";
 
 class FeederEventDto {
   @IsString()
   type!: string;
+}
+
+class FeederSettingsDto {
+  @IsBoolean()
+  motionNotificationsEnabled!: boolean;
 }
 
 @Controller("feeder")
@@ -34,6 +39,16 @@ export class FeederController {
   async event(@Body() dto: FeederEventDto) {
     await this.feederService.handleEvent(dto.type);
     return { status: "ok" };
+  }
+
+  @Get("settings")
+  async getSettings() {
+    return this.feederService.getSettings();
+  }
+
+  @Patch("settings")
+  async updateSettings(@Body() dto: FeederSettingsDto) {
+    return this.feederService.setMotionNotifications(dto.motionNotificationsEnabled);
   }
 
   @Get("nfc")
