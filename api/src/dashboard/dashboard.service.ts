@@ -15,9 +15,7 @@ export class DashboardService {
 
     if (view === "weather")
       imageView = renderWeather({
-        tempOutdoor: 8.5,
         tempIndoor: 21.3,
-        humidity: 78,
         ...weatherDataOpenMeteo,
       });
 
@@ -27,15 +25,23 @@ export class DashboardService {
   }
 
   async getWeatherDataOpenMeteo() {
-    const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=51.1079&longitude=17.0385&current=temperature_2m,apparent_temperature,relative_humidity_2m,surface_pressure`;
+    const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=51.1079&longitude=17.0385&current=temperature_2m,apparent_temperature,relative_humidity_2m,surface_pressure,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FWarsaw&forecast_days=5`;
 
     const resp = await fetch(API_URL);
     const data = (await resp.json()) as TWeatherDataOpenMeteo;
 
     return {
-      feelsLike: data.current.apparent_temperature,
-      pressure: data.current.surface_pressure,
+      feelsLike: Math.round(data.current.apparent_temperature),
+      pressure: Math.round(data.current.surface_pressure),
       tempMeteo: data.current.temperature_2m,
+      humidity: Math.round(data.current.relative_humidity_2m),
+      weatherCode: data.current.weather_code,
+      forecast: data.daily.time.map((date, i) => ({
+        date,
+        tempMax: Math.round(data.daily.temperature_2m_max[i]!),
+        tempMin: Math.round(data.daily.temperature_2m_min[i]!),
+        weatherCode: data.daily.weather_code[i]!,
+      })),
     };
   }
 

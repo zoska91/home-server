@@ -7,13 +7,13 @@ const FONT = "'DejaVu Sans Mono'";
 function setupCanvas() {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
-
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
-
+  // rotate 180° so the display is mounted upside down
+  ctx.translate(W, H);
+  ctx.rotate(Math.PI);
   ctx.strokeStyle = "#000000";
   ctx.fillStyle = "#000000";
-
   return { canvas, ctx };
 }
 
@@ -22,11 +22,7 @@ function drawBorder(ctx: CanvasRenderingContext2D) {
   ctx.strokeRect(1, 1, W - 2, H - 2);
 }
 
-function drawHeader(
-  ctx: CanvasRenderingContext2D,
-  title: string,
-  right: string,
-) {
+function drawHeader(ctx: CanvasRenderingContext2D, title: string, right: string) {
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, 52);
@@ -43,6 +39,7 @@ function drawHeader(
   const rightW = ctx.measureText(right).width;
   ctx.fillText(right, W - rightW - 20, 36);
   ctx.fillStyle = "#000000";
+  ctx.letterSpacing = "0px";
 }
 
 function drawFooter(ctx: CanvasRenderingContext2D, text: string) {
@@ -63,20 +60,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, text: string) {
 function formatDate(): string {
   const now = new Date();
   const days = ["Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "Sb"];
-  const months = [
-    "Sty",
-    "Lut",
-    "Mar",
-    "Kwi",
-    "Maj",
-    "Cze",
-    "Lip",
-    "Sie",
-    "Wrz",
-    "Paź",
-    "Lis",
-    "Gru",
-  ];
+  const months = ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paź", "Lis", "Gru"];
   return `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 
@@ -85,16 +69,133 @@ function formatTime(): string {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+// ─── Weather helpers ────────────────────────────────────────────────────────
+
+type WeatherCategory = "clear" | "cloudy" | "fog" | "rain" | "snow" | "storm";
+
+function weatherCategory(code: number): WeatherCategory {
+  if (code <= 1) return "clear";
+  if (code <= 3) return "cloudy";
+  if (code <= 48) return "fog";
+  if (code >= 95) return "storm";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
+  return "rain";
+}
+
+function getDayName(dateStr: string): string {
+  const days = ["Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "Sb"];
+  return days[new Date(`${dateStr}T12:00:00`).getDay()];
+}
+
+function formatTemp(t: number, decimals = 0): string {
+  const abs = decimals > 0 ? Math.abs(t).toFixed(decimals) : String(Math.abs(t));
+  return `${t < 0 ? "−" : ""}${abs}°`;
+}
+
+// ─── Icon drawing ────────────────────────────────────────────────────────────
+
+function drawCloud(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  const lw = Math.max(2, size * 0.065);
+  ctx.lineWidth = lw;
+
+  const Lx = cx - size * 0.24, Ly = cy + size * 0.04, Lr = size * 0.18;
+  const Mx = cx,               My = cy - size * 0.10, Mr = size * 0.24;
+  const Rx = cx + size * 0.22, Ry = cy - size * 0.02, Rr = size * 0.20;
+  const baseY = cy + size * 0.22;
+
+  ctx.beginPath();
+  ctx.arc(Lx, Ly, Lr, Math.PI, 0);
+  ctx.arc(Mx, My, Mr, Math.PI, 0);
+  ctx.arc(Rx, Ry, Rr, Math.PI, 0);
+  ctx.lineTo(Rx + Rr, baseY);
+  ctx.lineTo(Lx - Lr, baseY);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function drawWeatherIcon(ctx: CanvasRenderingContext2D, code: number, cx: number, cy: number, size: number) {
+  const cat = weatherCategory(code);
+  const lw = Math.max(2, size * 0.065);
+
+  ctx.save();
+  ctx.strokeStyle = "#000000";
+  ctx.fillStyle = "#000000";
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = lw;
+
+  if (cat === "clear") {
+    const r = size * 0.22;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (r + size * 0.07), cy + Math.sin(a) * (r + size * 0.07));
+      ctx.lineTo(cx + Math.cos(a) * (r + size * 0.17), cy + Math.sin(a) * (r + size * 0.17));
+      ctx.stroke();
+    }
+  } else if (cat === "fog") {
+    ctx.lineCap = "round";
+    for (let i = 0; i < 3; i++) {
+      const lineY = cy - size * 0.16 + i * size * 0.17;
+      const hw = i === 1 ? size * 0.38 : size * 0.28;
+      ctx.beginPath();
+      ctx.moveTo(cx - hw, lineY);
+      ctx.lineTo(cx + hw, lineY);
+      ctx.stroke();
+    }
+  } else {
+    const cloudCy = cat === "cloudy" ? cy : cy - size * 0.12;
+    const cloudBottomY = cloudCy + size * 0.22;
+    drawCloud(ctx, cx, cloudCy, size);
+
+    if (cat === "rain") {
+      ctx.lineWidth = lw * 0.8;
+      const dy = cloudBottomY + size * 0.06;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(cx + i * size * 0.19 - size * 0.04, dy);
+        ctx.lineTo(cx + i * size * 0.19 + size * 0.04, dy + size * 0.18);
+        ctx.stroke();
+      }
+    } else if (cat === "snow") {
+      const dotR = Math.max(2.5, size * 0.055);
+      const dotY = cloudBottomY + size * 0.1;
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.arc(cx + i * size * 0.19, dotY, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (cat === "storm") {
+      const bx = cx;
+      const by = cloudBottomY + size * 0.05;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.moveTo(bx + size * 0.06, by);
+      ctx.lineTo(bx - size * 0.08, by + size * 0.16);
+      ctx.lineTo(bx + size * 0.04, by + size * 0.16);
+      ctx.lineTo(bx - size * 0.07, by + size * 0.34);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 // ─────────────────────────────────────────────
 // VIEW 1: WEATHER
 // ─────────────────────────────────────────────
 export interface WeatherRenderData {
-  tempOutdoor: number;
-  feelsLike: number;
-  humidity: number;
-  pressure: number;
-  tempMeteo: number;
   tempIndoor?: number;
+  tempOutdoor?: number;
+  humidity: number;
+  tempMeteo: number;
+  pressure: number;
+  feelsLike: number;
+  weatherCode: number;
+  forecast: { date: string; tempMax: number; tempMin: number; weatherCode: number }[];
 }
 
 export function renderWeather(data: WeatherRenderData): Buffer {
@@ -102,112 +203,131 @@ export function renderWeather(data: WeatherRenderData): Buffer {
   drawBorder(ctx);
   drawHeader(ctx, "POGODA", formatDate());
 
-  // ── Blok: temp in home (230px) ──
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#000000";
-  ctx.strokeRect(20, 68, W - 40, 230);
-
-  ctx.font = `10px ${FONT}`;
-  ctx.fillStyle = "#555555";
-  ctx.fillText("TEMPERATURA — POKÓJ", 60, 90);
-
-  if (data.tempIndoor !== undefined) {
-    ctx.font = `bold 84px ${FONT}`;
-    ctx.fillStyle = "#000000";
-    ctx.fillText(`${data.tempIndoor.toFixed(1)}°C`, 55, 210);
-  } else {
-    ctx.font = `bold 36px ${FONT}`;
-    ctx.fillStyle = "#aaaaaa";
-    ctx.fillText("brak czujnika", 55, 200);
-    ctx.font = `11px ${FONT}`;
-    ctx.fillText("(ESP32 + SHT30 nie podłączony)", 55, 240);
-    ctx.fillStyle = "#000000";
-  }
-
-  // ── Blok: temp outside + humidity (230px) ──
-  const col1x = W / 4;
-  const col2x = (W / 4) * 3;
-  const rowY = 320;
-  const blockH = 230;
-
-  ctx.font = `14px ${FONT}`;
-  ctx.fillStyle = "#555555";
-  ctx.textAlign = "center";
-  ctx.fillText("NA ZEWNĄTRZ", col1x, rowY + 60);
-  ctx.fillText("WILGOTNOŚĆ", col2x, rowY + 60);
-  ctx.fillStyle = "#000000";
-
-  ctx.font = `bold 68px ${FONT}`;
-  const sign1 = data.tempOutdoor < 0 ? "−" : "";
-  ctx.fillText(
-    `${sign1}${Math.abs(data.tempOutdoor).toFixed(1)}°`,
-    col1x,
-    rowY + 130,
-  );
-  ctx.fillText(`${data.humidity}%`, col2x, rowY + 130);
-
-  ctx.fillStyle = "#000000";
-  ctx.textAlign = "left";
-
+  // ── Row 1: 3 tiles (no outer box, dividers only) ──────────────────────────
   ctx.lineWidth = 1;
   ctx.strokeStyle = "#cccccc";
-  ctx.beginPath();
-  ctx.moveTo(W / 2, rowY);
-  ctx.lineTo(W / 2, rowY + blockH);
-  ctx.stroke();
-
-  // ── section: Wrocław (API) ──
-  const divY = 570;
-  ctx.lineWidth = 1;
+  for (const divX of [207, 393]) {
+    ctx.beginPath();
+    ctx.moveTo(divX, 68);
+    ctx.lineTo(divX, 253);
+    ctx.stroke();
+  }
   ctx.strokeStyle = "#000000";
 
-  ctx.font = `bold 14px ${FONT}`;
-  ctx.fillStyle = "#000000";
-  ctx.fillText("WROCŁAW", 20, divY + 14);
-  ctx.beginPath();
-  ctx.moveTo(110, divY + 10);
-  ctx.lineTo(W - 20, divY + 10);
-  ctx.stroke();
+  const tile1x = 113, tile2x = 300, tile3x = 487;
+  const tileValueY = 197;
 
-  // 3 columns: temp, pressure, feels like
-  const cols = [
-    {
-      label: "TEMP.",
-      value: `${data.tempMeteo < 0 ? "−" : ""}${Math.abs(data.tempMeteo).toFixed(1)}°`,
-      x: 100,
-    },
-    {
-      label: "CIŚNIENIE",
-      value: `${data.pressure}`,
-      unit: "hPa",
-      x: W / 2,
-    },
-    {
-      label: "ODCZUW.",
-      value: `${data.feelsLike < 0 ? "−" : ""}${Math.abs(data.feelsLike)}°`,
-      x: W - 100,
-    },
+  ctx.textAlign = "center";
+
+  // Tile 1: indoor temp
+  ctx.font = `11px ${FONT}`;
+  ctx.fillStyle = "#555555";
+  ctx.fillText("POKÓJ", tile1x, 90);
+  if (data.tempIndoor !== undefined) {
+    ctx.font = `bold 44px ${FONT}`;
+    ctx.fillStyle = "#000000";
+    ctx.fillText(`${data.tempIndoor.toFixed(1)}°C`, tile1x, tileValueY);
+  } else {
+    ctx.font = `14px ${FONT}`;
+    ctx.fillStyle = "#aaaaaa";
+    ctx.fillText("brak czujnika", tile1x, tileValueY);
+  }
+
+  // Tile 2: outdoor temp sensor (placeholder)
+  ctx.font = `11px ${FONT}`;
+  ctx.fillStyle = "#555555";
+  ctx.fillText("ZEWNĄTRZ", tile2x, 90);
+  if (data.tempOutdoor !== undefined) {
+    ctx.font = `bold 44px ${FONT}`;
+    ctx.fillStyle = "#000000";
+    ctx.fillText(`${data.tempOutdoor.toFixed(1)}°C`, tile2x, tileValueY);
+  } else {
+    ctx.font = `14px ${FONT}`;
+    ctx.fillStyle = "#aaaaaa";
+    ctx.fillText("brak czujnika", tile2x, tileValueY);
+  }
+
+  // Tile 3: humidity
+  ctx.font = `11px ${FONT}`;
+  ctx.fillStyle = "#555555";
+  ctx.fillText("WILGOTNOŚĆ", tile3x, 90);
+  ctx.font = `bold 44px ${FONT}`;
+  ctx.fillStyle = "#000000";
+  ctx.fillText(`${data.humidity}%`, tile3x, tileValueY);
+
+  // ── Row 2: Outdoor temp | Pressure | Weather icon | Feels like ──────────
+  const colCenters = [W / 8, (W * 3) / 8, (W * 5) / 8, (W * 7) / 8];
+
+  const col2Labels = ["ZEWNĄTRZ", "CIŚNIENIE", "POGODA", "ODCZUW."];
+  const col2Values = [
+    { value: formatTemp(data.tempMeteo, 1), fontSize: 36 },
+    { value: String(data.pressure), fontSize: 34, unit: "hPa" },
+    null,
+    { value: formatTemp(data.feelsLike), fontSize: 36 },
   ];
 
-  cols.forEach(({ label, value, unit, x }) => {
-    ctx.font = `14px ${FONT}`;
+  col2Labels.forEach((label, i) => {
+    const x = colCenters[i]!;
+    ctx.textAlign = "center";
+    ctx.font = `11px ${FONT}`;
     ctx.fillStyle = "#666666";
-    const lw = ctx.measureText(label).width;
-    ctx.fillText(label, x - lw / 2, divY + 72);
+    ctx.fillText(label, x, 300);
 
-    ctx.font = `bold 40px ${FONT}`;
-    ctx.fillStyle = "#000000";
-    const vw = ctx.measureText(value).width;
-    ctx.fillText(value, x - vw / 2, divY + 120);
-
-    if (unit) {
-      ctx.font = `11px ${FONT}`;
-      ctx.fillStyle = "#888888";
-      const uw = ctx.measureText(unit).width;
-      ctx.fillText(unit, x - uw / 2, divY + 140);
+    const col = col2Values[i];
+    if (col === null) {
+      drawWeatherIcon(ctx, data.weatherCode, x, 358, 52);
+    } else {
+      ctx.font = `bold ${col.fontSize}px ${FONT}`;
+      ctx.fillStyle = "#000000";
+      ctx.fillText(col.value, x, 370);
+      if ("unit" in col) {
+        ctx.font = `10px ${FONT}`;
+        ctx.fillStyle = "#888888";
+        ctx.fillText(col.unit ?? "", x, 390);
+      }
     }
   });
 
+  // ── Row 3: 5-day forecast ─────────────────────────────────────────────────
+  const colW = W / 5;
+  const forecast = data.forecast.slice(0, 5);
+
+  forecast.forEach((day, i) => {
+    const cx = colW * i + colW / 2;
+    const [, month, dd] = day.date.split("-");
+
+    if (i > 0) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "#cccccc";
+      ctx.beginPath();
+      ctx.moveTo(colW * i, 420);
+      ctx.lineTo(colW * i, 764);
+      ctx.stroke();
+      ctx.strokeStyle = "#000000";
+    }
+
+    ctx.textAlign = "center";
+
+    ctx.font = `bold 14px ${FONT}`;
+    ctx.fillStyle = "#000000";
+    ctx.fillText(getDayName(day.date), cx, 448);
+
+    ctx.font = `11px ${FONT}`;
+    ctx.fillStyle = "#888888";
+    ctx.fillText(`${dd}.${month}`, cx, 466);
+
+    drawWeatherIcon(ctx, day.weatherCode, cx, 530, 72);
+
+    ctx.font = `bold 22px ${FONT}`;
+    ctx.fillStyle = "#000000";
+    ctx.fillText(formatTemp(day.tempMax), cx, 622);
+
+    ctx.font = `17px ${FONT}`;
+    ctx.fillStyle = "#777777";
+    ctx.fillText(formatTemp(day.tempMin), cx, 700);
+  });
+
+  ctx.textAlign = "left";
   drawFooter(ctx, `↺ Odświeżono: ${formatTime()}`);
   return canvas.toBuffer("image/png");
 }
@@ -233,10 +353,7 @@ export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
 
   const itemH = 64;
   const startY = 52;
-  const pageItems = items.slice(
-    currentPage * perPage,
-    (currentPage + 1) * perPage,
-  );
+  const pageItems = items.slice(currentPage * perPage, (currentPage + 1) * perPage);
 
   pageItems.forEach((item, i) => {
     const y = startY + i * itemH;
@@ -248,10 +365,10 @@ export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
     ctx.lineTo(W, y + itemH);
     ctx.stroke();
 
+    ctx.fillStyle = "#000000";
     ctx.fillText(item.name, 56, y + itemH / 2 + 7);
   });
 
-  // Footer with pagination
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#000000";
   ctx.beginPath();
@@ -264,9 +381,6 @@ export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
   const pageText = `${currentPage + 1} / ${totalPages}`;
   const pw = ctx.measureText(pageText).width;
   ctx.fillText(pageText, W / 2 - pw / 2, H - 22);
-
-  ctx.font = `14px ${FONT}`;
-  ctx.fillStyle = currentPage < totalPages - 1 ? "#000000" : "#cccccc";
 
   return canvas.toBuffer("image/png");
 }

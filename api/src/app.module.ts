@@ -7,6 +7,7 @@ import { FeederModule } from "./feeder/feeder.module";
 import { AiModule } from "./ai/ai.module";
 import { seed } from "./db/seed";
 import { DashboardModule } from "./dashboard/dashboard.module";
+import { Esd3dModule } from "./esd3d/esd3d.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DashboardModule } from "./dashboard/dashboard.module";
     FeederModule,
     AiModule,
     DashboardModule,
+    Esd3dModule,
   ],
 })
 export class AppModule implements OnModuleInit {

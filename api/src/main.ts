@@ -6,8 +6,8 @@ import { AppModule } from "./app.module";
 import { seed } from "./db/seed";
 
 async function bootstrap() {
-  console.log("[startup] Running migrations...");
-  execSync("npx prisma migrate deploy", { stdio: "inherit" });
+  console.log("[startup] Syncing database schema...");
+  execSync("npx prisma db push", { stdio: "inherit" });
 
   console.log("[startup] Running seed...");
   await seed();
