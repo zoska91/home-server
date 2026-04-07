@@ -9,14 +9,19 @@ export class DashboardService {
 
   async getDisplay(view: TDashboardView, page: number) {
     const weatherDataOpenMeteo = await this.getWeatherDataOpenMeteo();
+    const weatherDataHome = await this.prisma.homeTemp.findFirst({
+      orderBy: { createdAt: "desc" },
+    });
     const shoppingItems = await this.getShoppingItems();
 
     let imageView;
 
     if (view === "weather")
       imageView = renderWeather({
-        tempIndoor: 21.3,
         ...weatherDataOpenMeteo,
+        tempInside: weatherDataHome?.tempInside ?? undefined,
+        tempOutside: weatherDataHome?.tempOutside ?? undefined,
+        humidity: weatherDataHome?.humidity ?? undefined,
       });
 
     if (view === "shopping") imageView = renderShopping(shoppingItems, page);
@@ -34,7 +39,6 @@ export class DashboardService {
       feelsLike: Math.round(data.current.apparent_temperature),
       pressure: Math.round(data.current.surface_pressure),
       tempMeteo: data.current.temperature_2m,
-      humidity: Math.round(data.current.relative_humidity_2m),
       weatherCode: data.current.weather_code,
       forecast: data.daily.time.map((date, i) => ({
         date,
@@ -59,5 +63,20 @@ export class DashboardService {
   async getPageCount() {
     const count = await this.prisma.shoppingListItem.count();
     return Math.ceil(count / 10);
+  }
+
+  async saveHomeTemp(
+    tempInside: string,
+    tempOutside: string,
+    humidity: string,
+  ) {
+    await this.prisma.homeTemp.deleteMany();
+    await this.prisma.homeTemp.create({
+      data: {
+        tempInside: parseFloat(tempInside),
+        tempOutside: parseFloat(tempOutside),
+        humidity: parseFloat(humidity),
+      },
+    });
   }
 }

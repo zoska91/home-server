@@ -1,4 +1,12 @@
-import { Controller, Get, Header, Query, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Post,
+  Query,
+  Res,
+} from "@nestjs/common";
 import { DashboardService } from "./dashboard.service";
 import { Response } from "express";
 import { TDashboardView } from "./dashboard.types";
@@ -23,5 +31,14 @@ export class DashboardController {
     }
 
     res.send(png);
+  }
+
+  @Post("home-temp")
+  async saveHomeTemp(
+    @Body("temp_sht") tempInside: string,
+    @Body("temp_ds") tempOutside: string,
+    @Body("humidity") humidity: string,
+  ) {
+    await this.dashboardService.saveHomeTemp(tempInside, tempOutside, humidity);
   }
 }

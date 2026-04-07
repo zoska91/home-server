@@ -22,7 +22,11 @@ function drawBorder(ctx: CanvasRenderingContext2D) {
   ctx.strokeRect(1, 1, W - 2, H - 2);
 }
 
-function drawHeader(ctx: CanvasRenderingContext2D, title: string, right: string) {
+function drawHeader(
+  ctx: CanvasRenderingContext2D,
+  title: string,
+  right: string,
+) {
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, 52);
@@ -60,7 +64,20 @@ function drawFooter(ctx: CanvasRenderingContext2D, text: string) {
 function formatDate(): string {
   const now = new Date();
   const days = ["Nd", "Pn", "Wt", "Śr", "Czw", "Pt", "Sb"];
-  const months = ["Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paź", "Lis", "Gru"];
+  const months = [
+    "Sty",
+    "Lut",
+    "Mar",
+    "Kwi",
+    "Maj",
+    "Cze",
+    "Lip",
+    "Sie",
+    "Wrz",
+    "Paź",
+    "Lis",
+    "Gru",
+  ];
   return `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
 }
 
@@ -88,19 +105,31 @@ function getDayName(dateStr: string): string {
 }
 
 function formatTemp(t: number, decimals = 0): string {
-  const abs = decimals > 0 ? Math.abs(t).toFixed(decimals) : String(Math.abs(t));
+  const abs =
+    decimals > 0 ? Math.abs(t).toFixed(decimals) : String(Math.abs(t));
   return `${t < 0 ? "−" : ""}${abs}°`;
 }
 
 // ─── Icon drawing ────────────────────────────────────────────────────────────
 
-function drawCloud(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+function drawCloud(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+) {
   const lw = Math.max(2, size * 0.065);
   ctx.lineWidth = lw;
 
-  const Lx = cx - size * 0.24, Ly = cy + size * 0.04, Lr = size * 0.18;
-  const Mx = cx,               My = cy - size * 0.10, Mr = size * 0.24;
-  const Rx = cx + size * 0.22, Ry = cy - size * 0.02, Rr = size * 0.20;
+  const Lx = cx - size * 0.24,
+    Ly = cy + size * 0.04,
+    Lr = size * 0.18;
+  const Mx = cx,
+    My = cy - size * 0.1,
+    Mr = size * 0.24;
+  const Rx = cx + size * 0.22,
+    Ry = cy - size * 0.02,
+    Rr = size * 0.2;
   const baseY = cy + size * 0.22;
 
   ctx.beginPath();
@@ -113,7 +142,13 @@ function drawCloud(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: 
   ctx.stroke();
 }
 
-function drawWeatherIcon(ctx: CanvasRenderingContext2D, code: number, cx: number, cy: number, size: number) {
+function drawWeatherIcon(
+  ctx: CanvasRenderingContext2D,
+  code: number,
+  cx: number,
+  cy: number,
+  size: number,
+) {
   const cat = weatherCategory(code);
   const lw = Math.max(2, size * 0.065);
 
@@ -132,8 +167,14 @@ function drawWeatherIcon(ctx: CanvasRenderingContext2D, code: number, cx: number
     for (let i = 0; i < 8; i++) {
       const a = (i * Math.PI) / 4;
       ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * (r + size * 0.07), cy + Math.sin(a) * (r + size * 0.07));
-      ctx.lineTo(cx + Math.cos(a) * (r + size * 0.17), cy + Math.sin(a) * (r + size * 0.17));
+      ctx.moveTo(
+        cx + Math.cos(a) * (r + size * 0.07),
+        cy + Math.sin(a) * (r + size * 0.07),
+      );
+      ctx.lineTo(
+        cx + Math.cos(a) * (r + size * 0.17),
+        cy + Math.sin(a) * (r + size * 0.17),
+      );
       ctx.stroke();
     }
   } else if (cat === "fog") {
@@ -188,14 +229,19 @@ function drawWeatherIcon(ctx: CanvasRenderingContext2D, code: number, cx: number
 // VIEW 1: WEATHER
 // ─────────────────────────────────────────────
 export interface WeatherRenderData {
-  tempIndoor?: number;
-  tempOutdoor?: number;
-  humidity: number;
+  tempInside?: number;
+  tempOutside?: number;
+  humidity?: number;
   tempMeteo: number;
   pressure: number;
   feelsLike: number;
   weatherCode: number;
-  forecast: { date: string; tempMax: number; tempMin: number; weatherCode: number }[];
+  forecast: {
+    date: string;
+    tempMax: number;
+    tempMin: number;
+    weatherCode: number;
+  }[];
 }
 
 export function renderWeather(data: WeatherRenderData): Buffer {
@@ -214,7 +260,9 @@ export function renderWeather(data: WeatherRenderData): Buffer {
   }
   ctx.strokeStyle = "#000000";
 
-  const tile1x = 113, tile2x = 300, tile3x = 487;
+  const tile1x = 113,
+    tile2x = 300,
+    tile3x = 487;
   const tileValueY = 197;
 
   ctx.textAlign = "center";
@@ -222,11 +270,11 @@ export function renderWeather(data: WeatherRenderData): Buffer {
   // Tile 1: indoor temp
   ctx.font = `11px ${FONT}`;
   ctx.fillStyle = "#555555";
-  ctx.fillText("POKÓJ", tile1x, 90);
-  if (data.tempIndoor !== undefined) {
+  ctx.fillText("w środku", tile1x, 90);
+  if (data.tempInside !== undefined) {
     ctx.font = `bold 44px ${FONT}`;
     ctx.fillStyle = "#000000";
-    ctx.fillText(`${data.tempIndoor.toFixed(1)}°C`, tile1x, tileValueY);
+    ctx.fillText(`${data.tempInside.toFixed(1)}°C`, tile1x, tileValueY);
   } else {
     ctx.font = `14px ${FONT}`;
     ctx.fillStyle = "#aaaaaa";
@@ -236,11 +284,11 @@ export function renderWeather(data: WeatherRenderData): Buffer {
   // Tile 2: outdoor temp sensor (placeholder)
   ctx.font = `11px ${FONT}`;
   ctx.fillStyle = "#555555";
-  ctx.fillText("ZEWNĄTRZ", tile2x, 90);
-  if (data.tempOutdoor !== undefined) {
+  ctx.fillText("za oknem", tile2x, 90);
+  if (data.tempOutside !== undefined) {
     ctx.font = `bold 44px ${FONT}`;
     ctx.fillStyle = "#000000";
-    ctx.fillText(`${data.tempOutdoor.toFixed(1)}°C`, tile2x, tileValueY);
+    ctx.fillText(`${data.tempOutside.toFixed(1)}°C`, tile2x, tileValueY);
   } else {
     ctx.font = `14px ${FONT}`;
     ctx.fillStyle = "#aaaaaa";
@@ -353,7 +401,10 @@ export function renderShopping(items: ShoppingItem[], page = 0): Buffer {
 
   const itemH = 64;
   const startY = 52;
-  const pageItems = items.slice(currentPage * perPage, (currentPage + 1) * perPage);
+  const pageItems = items.slice(
+    currentPage * perPage,
+    (currentPage + 1) * perPage,
+  );
 
   pageItems.forEach((item, i) => {
     const y = startY + i * itemH;

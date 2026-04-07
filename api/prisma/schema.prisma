@@ -69,3 +69,13 @@ model FeederSettings {
 
   @@map("feeder_settings")
 }
+
+model HomeTemp {
+  id          Int      @id @default(autoincrement())
+  tempInside  Float    @map("temp_inside")
+  tempOutside Float    @map("temp_outside")
+  humidity    Float
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("home_temp")
+}
