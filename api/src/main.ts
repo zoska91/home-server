@@ -13,6 +13,11 @@ async function bootstrap() {
   await seed();
 
   const app = await NestFactory.create(AppModule);
+  app.enableCors({
+    origin: "*",
+    methods: ["POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   await app.listen(process.env["PORT"] ?? 8000);
   console.log(`[server] Running on port ${process.env["PORT"] ?? 8000}`);
