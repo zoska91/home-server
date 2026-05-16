@@ -1,8 +1,10 @@
 import { Module } from "@nestjs/common";
 import { Esd3dController } from "./esd3d.controller";
 import { Esd3dService } from "./esd3d.service";
+import { PrismaModule } from "../prisma/prisma.module";
 
 @Module({
+  imports: [PrismaModule],
   controllers: [Esd3dController],
   providers: [Esd3dService],
 })

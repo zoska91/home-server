@@ -1,77 +1,100 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import * as nodemailer from "nodemailer";
+import { IsEmail, IsOptional, IsString, MinLength } from "class-validator";
+import axios from "axios";
+import { PrismaService } from "../prisma/prisma.service";
 
 export class ContactFormDto {
+  @IsString()
+  @MinLength(1)
   name!: string;
-  company!: string;
+
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @IsEmail()
   email!: string;
-  phone!: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsString()
+  @MinLength(1)
   quantity!: string;
+
+  @IsString()
+  @MinLength(1)
   material!: string;
+
+  @IsString()
+  @MinLength(1)
   message!: string;
 }
 
 @Injectable()
 export class Esd3dService {
-  private readonly transporter: nodemailer.Transporter;
-  private readonly recipient = "kontakt@esd3d.pl";
+  private readonly discordMessageLimit = 2000;
 
-  constructor(private readonly config: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: config.get("SMTP_HOST") ?? "smtp.example.com",
-      port: Number(config.get("SMTP_PORT") ?? 587),
-      secure: false,
-      auth: {
-        user: config.get("SMTP_USER") ?? "",
-        pass: config.get("SMTP_PASS") ?? "",
-      },
-    });
-  }
+  constructor(
+    private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async sendContactForm(dto: ContactFormDto): Promise<void> {
-    await this.transporter.sendMail({
-      from: `"${dto.name}" <${this.config.get("SMTP_USER") ?? "noreply@esd3d.pl"}>`,
-      to: this.recipient,
-      replyTo: dto.email,
-      subject: `Zapytanie o druk 3D — ${dto.name}${dto.company ? ` (${dto.company})` : ""}`,
-      text: this.buildText(dto),
-      html: this.buildHtml(dto),
+    const submission = await this.prisma.esd3dContactSubmission.create({
+      data: {
+        name: dto.name,
+        company: dto.company || null,
+        email: dto.email,
+        phone: dto.phone || null,
+        quantity: dto.quantity,
+        material: dto.material,
+        message: dto.message,
+      },
     });
+
+    await this.sendDiscordMessage(this.buildDiscordMessage(submission.id, dto));
   }
 
-  private buildText(dto: ContactFormDto): string {
-    return [
-      `Imię i nazwisko: ${dto.name}`,
-      `Firma: ${dto.company || "—"}`,
+  private async sendDiscordMessage(content: string): Promise<void> {
+    const token = this.config.get<string>("DISCORD_TOKEN");
+    const channelId = this.config.get<string>("DISCORD_ALERT_CHANNEL_ID");
+
+    if (!token || !channelId) {
+      throw new InternalServerErrorException("Discord configuration is missing");
+    }
+
+    await axios.post(
+      `https://discord.com/api/v10/channels/${channelId}/messages`,
+      { content },
+      { headers: { Authorization: `Bot ${token}` } },
+    );
+  }
+
+  private buildDiscordMessage(id: number, dto: ContactFormDto): string {
+    const lines = [
+      "**Nowe zapytanie o druk 3D**",
+      `ID: ${id}`,
+      `Imie i nazwisko: ${dto.name}`,
+      dto.company ? `Firma: ${dto.company}` : null,
       `Email: ${dto.email}`,
-      `Telefon: ${dto.phone || "—"}`,
-      `Ilość: ${dto.quantity}`,
-      `Materiał: ${dto.material}`,
-      ``,
-      `Wiadomość:`,
+      dto.phone ? `Telefon: ${dto.phone}` : null,
+      `Ilosc: ${dto.quantity}`,
+      `Material: ${dto.material}`,
+      "",
+      "Wiadomosc:",
       dto.message,
-    ].join("\n");
+    ].filter((line): line is string => line !== null);
+
+    return this.truncateDiscordMessage(lines.join("\n"));
   }
 
-  private buildHtml(dto: ContactFormDto): string {
-    const row = (label: string, value: string) =>
-      `<tr><td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">${label}</td><td style="padding:4px 0"><strong>${value}</strong></td></tr>`;
+  private truncateDiscordMessage(message: string): string {
+    if (message.length <= this.discordMessageLimit) return message;
 
-    return `
-      <div style="font-family:sans-serif;max-width:600px">
-        <h2 style="color:#333">Nowe zapytanie o druk 3D</h2>
-        <table style="border-collapse:collapse;margin-bottom:20px">
-          ${row("Imię i nazwisko:", dto.name)}
-          ${row("Firma:", dto.company || "—")}
-          ${row("Email:", dto.email)}
-          ${row("Telefon:", dto.phone || "—")}
-          ${row("Ilość:", dto.quantity)}
-          ${row("Materiał:", dto.material)}
-        </table>
-        <p style="color:#333"><strong>Wiadomość:</strong></p>
-        <p style="background:#f5f5f5;padding:12px;border-radius:4px;white-space:pre-wrap">${dto.message}</p>
-      </div>
-    `;
+    const suffix = "\n\n[Wiadomosc ucieta do limitu Discorda]";
+    return `${message.slice(0, this.discordMessageLimit - suffix.length)}${suffix}`;
   }
 }

@@ -9,9 +9,12 @@ import { MESSAGES } from "../utils/messages";
 
 const mockGenerateContent = vi.hoisted(() => vi.fn());
 
-vi.mock("@google/genai", () => ({
-  GoogleGenAI: vi.fn().mockImplementation(() => ({
-    models: { generateContent: mockGenerateContent },
+vi.mock("ollama", () => ({
+  Ollama: vi.fn().mockImplementation(() => ({
+    generate: async (...args: unknown[]) => {
+      const result = await mockGenerateContent(...args);
+      return { response: result.response ?? result.text ?? result };
+    },
   })),
 }));
 

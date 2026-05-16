@@ -79,3 +79,17 @@ model HomeTemp {
 
   @@map("home_temp")
 }
+
+model Esd3dContactSubmission {
+  id        Int      @id @default(autoincrement())
+  name      String
+  company   String?
+  email     String
+  phone     String?
+  quantity  String
+  material  String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("esd3d_contact_submissions")
+}
