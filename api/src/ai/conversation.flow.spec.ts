@@ -6,6 +6,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FeederService } from "../feeder/feeder.service";
 import { ConversationService } from "../conversation/conversation.service";
 import { MESSAGES } from "../utils/messages";
+import { ShoppingAiService } from "../shopping/shopping-ai.service";
 
 const mockGenerateContent = vi.hoisted(() => vi.fn());
 
@@ -41,6 +42,7 @@ describe("Conversation Flow", () => {
     const module = await Test.createTestingModule({
       providers: [
         AiService,
+        ShoppingAiService,
         ConversationService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: FeederService, useValue: mockFeederService },

@@ -23,7 +23,7 @@ export class FeederController {
 
   @Post("motion")
   @UseInterceptors(FileInterceptor("snapshot"))
-  async motion(@UploadedFile() snapshot: Express.Multer.File) {
+  async motion(@UploadedFile() snapshot: { buffer: Buffer }) {
     if (!snapshot) throw new BadRequestException("No snapshot provided");
     await this.feederService.handleMotion(snapshot.buffer);
     return { status: "ok" };

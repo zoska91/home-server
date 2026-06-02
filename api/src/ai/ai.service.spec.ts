@@ -6,6 +6,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { FeederService } from "../feeder/feeder.service";
 import { ConversationService } from "../conversation/conversation.service";
 import { MESSAGES } from "../utils/messages";
+import { ShoppingAiService } from "../shopping/shopping-ai.service";
 
 const mockGenerateContent = vi.hoisted(() => vi.fn());
 
@@ -45,7 +46,12 @@ const actions = [
 
 describe("AiService", () => {
   let service: AiService;
+  let shoppingAiService: ShoppingAiService;
   let conversationService: ConversationService;
+  const generateText = async (contents: string) => {
+    const result = await mockGenerateContent(contents);
+    return result.response ?? result.text ?? result;
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -54,6 +60,7 @@ describe("AiService", () => {
     const module = await Test.createTestingModule({
       providers: [
         AiService,
+        ShoppingAiService,
         ConversationService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: FeederService, useValue: mockFeederService },
@@ -62,6 +69,7 @@ describe("AiService", () => {
     }).compile();
 
     service = module.get(AiService);
+    shoppingAiService = module.get(ShoppingAiService);
     conversationService = module.get(ConversationService);
   });
 
@@ -126,7 +134,11 @@ describe("AiService", () => {
       mockPrisma.shoppingListItem.create.mockResolvedValue({});
       mockPrisma.shoppingProduct.findUnique.mockResolvedValue({ id: 1, name: "mleko" });
 
-      const result = await service.handleAddToShoppingList("mleko", "user1");
+      const result = await shoppingAiService.handleAddToShoppingList(
+        "mleko",
+        "user1",
+        generateText,
+      );
       expect(result).toBe(MESSAGES.PRODUCT_ADDED("mleko"));
     });
 
@@ -135,14 +147,24 @@ describe("AiService", () => {
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ status: "found", product_id: 1 }) });
       mockPrisma.shoppingListItem.findFirst.mockResolvedValue({ id: 1, productId: 1 });
 
-      expect(await service.handleAddToShoppingList("mleko", "user1")).toBe(MESSAGES.PRODUCT_ALREADY_ON_LIST);
+      expect(
+        await shoppingAiService.handleAddToShoppingList(
+          "mleko",
+          "user1",
+          generateText,
+        ),
+      ).toBe(MESSAGES.PRODUCT_ALREADY_ON_LIST);
     });
 
     it("sets awaiting_confirm state", async () => {
       mockPrisma.shoppingProduct.findMany.mockResolvedValue(products);
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ status: "confirm", product_id: 1 }) });
 
-      await service.handleAddToShoppingList("mleczko", "user1");
+      await shoppingAiService.handleAddToShoppingList(
+        "mleczko",
+        "user1",
+        generateText,
+      );
       expect(conversationService.get("user1")?.["state"]).toBe("awaiting_confirm");
     });
 
@@ -150,7 +172,11 @@ describe("AiService", () => {
       mockPrisma.shoppingProduct.findMany.mockResolvedValue(products);
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ status: "not_found", product_id: null }) });
 
-      await service.handleAddToShoppingList("indyk", "user1");
+      await shoppingAiService.handleAddToShoppingList(
+        "indyk",
+        "user1",
+        generateText,
+      );
       expect(conversationService.get("user1")?.["state"]).toBe("awaiting_new_product");
     });
   });
@@ -161,21 +187,35 @@ describe("AiService", () => {
       mockPrisma.shoppingProduct.create.mockResolvedValue({ id: 99, name: "indyk" });
       mockPrisma.shoppingListItem.create.mockResolvedValue({});
 
-      const result = await service.handleCreateNewProduct("indyk", "user1");
+      const result = await shoppingAiService.handleCreateNewProduct(
+        "indyk",
+        "user1",
+        generateText,
+      );
       expect(result).toBe(MESSAGES.NEW_PRODUCT_ADDED("indyk"));
       expect(conversationService.get("user1")).toBeNull();
     });
 
     it("cancels on user resignation", async () => {
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ status: "cancelled" }) });
-      expect(await service.handleCreateNewProduct("nieważne", "user1")).toBe(MESSAGES.CANCELLED);
+      expect(
+        await shoppingAiService.handleCreateNewProduct(
+          "nieważne",
+          "user1",
+          generateText,
+        ),
+      ).toBe(MESSAGES.CANCELLED);
     });
 
     it("gives up after 3 invalid attempts", async () => {
       conversationService.set("user1", { state: "awaiting_new_product", attempts: 2 });
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ status: "invalid" }) });
 
-      const result = await service.handleCreateNewProduct("qwerty", "user1");
+      const result = await shoppingAiService.handleCreateNewProduct(
+        "qwerty",
+        "user1",
+        generateText,
+      );
       expect(result).toBe(MESSAGES.NEW_PRODUCT_NOT_ADDED);
       expect(conversationService.get("user1")).toBeNull();
     });
@@ -188,14 +228,24 @@ describe("AiService", () => {
       mockPrisma.shoppingListItem.create.mockResolvedValue({});
       mockPrisma.shoppingProduct.findUnique.mockResolvedValue({ id: 1, name: "mleko" });
 
-      const result = await service.handleAwaitingConfirm("tak", "user1", 1);
+      const result = await shoppingAiService.handleAwaitingConfirm(
+        "tak",
+        "user1",
+        1,
+        generateText,
+      );
       expect(result).toBe(MESSAGES.PRODUCT_ADDED("mleko"));
       expect(conversationService.get("user1")).toBeNull();
     });
 
     it("clears state on decline", async () => {
       mockGenerateContent.mockResolvedValue({ text: JSON.stringify({ decision: "decline" }) });
-      const result = await service.handleAwaitingConfirm("nie", "user1", 1);
+      const result = await shoppingAiService.handleAwaitingConfirm(
+        "nie",
+        "user1",
+        1,
+        generateText,
+      );
       expect(result).toBe(MESSAGES.DECLINED);
       expect(conversationService.get("user1")).toBeNull();
     });
